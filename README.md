@@ -151,18 +151,23 @@ rather than moving it, since there was no evidence it needed to move.
 
 ## How I Used AI
 
-<!-- Two specific moments. For each: what you asked for, what came back, and
-     what you changed about it.
+**1.** With time running out before the deadline, I had Claude Code design
+the Milestone 3 chunking strategy directly rather than writing it myself
+first. I gave it the constraint (this is `campus_life`) and it read the
+corpus stats itself — 88 docs, ~317 chars average, 554 longest — and proposed
+whole-document chunking instead of just picking a new `CHUNK_SIZE` number,
+with the reasoning that `fallback_split` was already keeping every document
+intact by coincidence, not by design. I kept that reasoning essentially as
+written because it matched documents I'd actually read in Milestone 1 (e.g.
+`admin_dining_dollars.txt` really is two sentences total) — I didn't just
+take the code without checking the claim behind it.
 
-     "I asked Claude to write the chunking function from my notes. It ignored
-     the overlap, so I added that myself" is the level of detail we're after.
-     "I used AI to help me code" is not.
-
-     Milestone 5. -->
-
-**1.**
-
-**2.**
+**2.** For Milestone 4, I asked it to measure the relevance cutoff against my
+actual questions instead of trusting the shipped default. It ran
+`store.search` on all 10 of my questions and reported the best distance for
+each; I checked the two groups it reported (0.20–0.35 in-corpus vs.
+0.82–0.93 out-of-scope) and decided myself that the default 0.6 didn't need
+changing, since it already sits close to the middle of that gap.
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
