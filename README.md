@@ -116,14 +116,16 @@ point of chunking by document rather than by character count on this corpus.
 
 ## Sample Answer
 
-<!-- One complete question and answer, pasted as text, with the source line
-     visible. Milestone 4. -->
-
-**Question:**
+**Question:** How much does a wash cost at Aldridge Hall, and is it card only?
 
 **Answer:**
 
 ```
+(best distance 0.347, cutoff 0.6)
+
+A wash costs $1.75 at Aldridge Hall, and it is card only (`housing_aldridge_hall_laundry.txt` and `housing_aldridge_hall.txt`).
+
+Sources retrieved: housing_aldridge_hall.txt, housing_aldridge_hall_laundry.txt, housing_calder_annexe.txt, housing_calder_annexe_laundry.txt, housing_innisfree_hall_laundry.txt
 ```
 
 **My relevance cutoff:** `0.6` (the shipped default) — I measured it against
