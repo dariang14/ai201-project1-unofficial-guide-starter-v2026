@@ -23,11 +23,28 @@ names a target of "4 of 5", and four of three is not a thing.
 
 QUESTIONS = [
     # {"question": "...", "expects": "..."},
-    {"question": "", "expects": ""},
-    {"question": "", "expects": ""},
-    {"question": "", "expects": ""},
-    {"question": "", "expects": ""},
-    {"question": "", "expects": ""},
+    {
+        "question": "How much does a wash cost at Aldridge Hall, and is it card only?",
+        "expects": "1.75",
+    },
+    {
+        "question": "Do dining dollars roll over from the spring semester to the following fall?",
+        "expects": "disappears",
+    },
+    {
+        "question": "How many midterms does CS 210 have, and are they curved?",
+        "expects": "curved",
+    },
+    # Multi-hop: needs housing_aldridge_hall_laundry.txt AND housing_morrow_house_laundry.txt.
+    {
+        "question": "Between Aldridge Hall and Morrow House, which building's laundry machines take coins, and which one costs more per wash?",
+        "expects": "Morrow",
+    },
+    # Multi-hop: needs admin_add_drop_deadline.txt AND admin_withdrawal_deadline.txt.
+    {
+        "question": "If I withdraw from a class in week 8 instead of just dropping it, what extra step does that require and how does it affect my GPA?",
+        "expects": "adviser signature",
+    },
 ]
 
 # Questions from a different world entirely. Your gate should refuse all five.
