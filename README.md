@@ -1,6 +1,6 @@
 # The Unofficial Guide
 
-<!-- TODO: put your name here. --> — `campus_life` corpus.
+<!-- Darian Gonzalez --> — `campus_life` corpus.
 
 > **This file is your submission.** Fill it in as you go — most sections get
 > written during the milestone that produces them, not at the end.
