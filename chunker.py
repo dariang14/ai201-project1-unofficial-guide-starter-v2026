@@ -82,22 +82,31 @@ def fallback_split(
 
 def split_documents(documents: list[Document]) -> list[Chunk]:
     """
-    Split documents into chunks. ⚠️ REPLACE THE BODY OF THIS IN MILESTONE 3.
+    Whole-document chunking, on purpose.
 
-    Right now it just calls the fallback. That is the plain, generic behaviour
-    the brief is talking about.
+    campus_life is 88 short posts averaging ~317 characters, longest 554 —
+    every one of them is one to three paragraphs where the useful fact
+    usually sits in a single sentence (see corpora/README.md). At the default
+    800-character chunk size, `fallback_split` already keeps every document
+    in one piece, but only by accident: it would start slicing mid-sentence
+    the moment any document passed 800 characters, and nothing about the
+    fixed-size window knows that a document is a single self-contained
+    thought.
 
-    When you write your own strategy, set `produced_by` to
-    "chunker.py::split_documents" so your README's Sample Chunks section names
-    the right function. `app.py chunks` prints that string for you.
-
-    Things worth thinking about before you write any code:
-      - Are your documents short posts or long guides?
-      - Is the useful information in one sentence, or spread over a paragraph?
-      - Would splitting on paragraph breaks keep more thoughts intact than
-        splitting on a character count?
+    This makes that behaviour deliberate instead of coincidental: one
+    document is always exactly one chunk, so no fact is ever separated from
+    the sentence around it, regardless of length or of what CHUNK_SIZE gets
+    set to later.
     """
-    return fallback_split(documents)
+    return [
+        Chunk(
+            text=doc.text,
+            source=doc.source,
+            index=0,
+            produced_by="chunker.py::split_documents",
+        )
+        for doc in documents
+    ]
 
 
 def describe(chunks: list[Chunk]) -> str:
