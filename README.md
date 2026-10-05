@@ -310,51 +310,91 @@ not one any of my five criteria measure, since they only check whether the
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 | _pending_ | _pending_ | _pending_ | _pending_ |
-| 2. Every answer names a source | 5 of 5 | _pending_ | _pending_ | _pending_ | _pending_ |
-| 3. Gate stops out-of-corpus questions | 4 of 5 | _pending_ | _pending_ | _pending_ | _pending_ |
-| 4. Chunking doesn't split a document that didn't need splitting | 4 of 5 | _pending_ | _pending_ | _pending_ | _pending_ |
-| 5. Cited source is the correct one | 4 of 5 | _pending_ | _pending_ | _pending_ | _pending_ |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 4/5 | 4/5 | 4/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 4. Chunking doesn't split a document that didn't need splitting | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 5. Cited source is the correct one | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+
+Full data in `results/run_2026-10-05_0219_after.md`. Real output, the same
+multi-hop question that's criterion 1's one miss, now with `TOP_K = 3`:
+
+```
+Between Aldridge Hall and Morrow House, which building's laundry machines
+take coins, and which one costs more per wash? — run 1
+
+Best distance: 0.2700 (passed the gate)
+Sources retrieved: housing_aldridge_hall_laundry.txt, housing_morrow_house.txt,
+housing_morrow_house_laundry.txt
+
+Morrow House laundry machines take coins (or cards), while Aldridge Hall
+costs more per wash at $1.75 compared to Morrow House's $1.50
+(housing_morrow_house_laundry.txt and housing_aldridge_hall_laundry.txt).
+```
 
 **Did it help?**
 
-_pending — re-run in progress._
+Yes, measurably — just not on the five criteria themselves, which is exactly
+what I expected going in. All five verdicts are identical before and after
+(4/5, 5/5, 5/5, 5/5, 5/5): nothing regressed, nothing was miscounted.
 
-### Run Log — After
+What actually moved is retrieval noise, and I can show it directly by
+comparing "Sources retrieved" between the two run logs, question by question:
 
-<!-- Same format, same five criteria, three runs each.
-     `python run_eval.py --label after` -->
+| Question | Before (top-5) | After (top-3) |
+|---|---|---|
+| Aldridge laundry cost | 5 sources | 3 sources |
+| Dining dollars rollover | 5 sources | 3 sources |
+| CS 210 midterms | 5 sources | 3 sources |
+| Aldridge vs. Morrow laundry | 5 sources | 3 sources |
+| Withdraw vs. drop | 5 sources | 3 sources |
 
-| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
-|---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
-
-**Did it help?**
-
-<!-- Say plainly whether it did, and how you know. If it made things worse,
-     say that — a change that backfired, honestly reported, earns full credit
-     and is more interesting than one that worked. What matters is that you can
-     tell.
-
-     Milestone 4. -->
+Every question dropped from 5 retrieved chunks to 3, and in all five cases
+the 2 chunks that got dropped were ones that never appeared in any cited
+answer before or after (e.g. `admin_printing_quota.txt` and
+`admin_add_drop_deadline.txt` disappearing from the dining-dollars and
+withdrawal questions respectively). The documents that actually mattered —
+including both halves of each multi-hop comparison — were never at risk,
+because I'd already confirmed with `store.search` that they ranked #1 or #2
+on every one of the 5 questions. So this was a safe cut, backed by
+measurement rather than a guess, and it does what it set out to do: less
+irrelevant context in every single prompt, for identical correctness.
 
 ## What's Still Broken
 
-<!-- For each criterion still missed after your fix: what you'd do about it,
-     and why you stopped where you did.
+**Criterion 1 is still 4 of 5**, both before and after, and I'm not treating
+that as fixed. The miss is the Aldridge/Morrow laundry comparison: both
+needed documents retrieve at rank #1 and #2 every time, but the criterion as
+I wrote it ("the retrieved chunks include **one** that contains the answer")
+is about a single chunk, and no single `campus_life` document compares two
+dorms against each other. What I'd actually do about it is rewrite the
+criterion for multi-hop questions specifically — something like "the union
+of the retrieved chunks contains every fact the answer needs" — rather than
+quietly reinterpreting the existing wording to make this pass, which the
+project rules are explicit is not how a criterion gets revised. I'm leaving
+the original wording and the 4/5 result exactly as they are.
 
-     "I ran out of time" is fine if it's true. Pretending nothing is left is
-     not.
-
-     Milestone 5. -->
+**Criterion 4 is still guaranteed by construction**, not measured. My
+chunker makes "one document = one chunk" a hard rule, so this criterion
+passes on `campus_life` no matter what I do, and my own Project 1 feedback
+pointed out the real gap: there's no upper bound, so a single document over
+800 characters would silently become one oversized chunk and this guarantee
+would stop being true. The fix (a length check in `split_documents` that
+warns or falls back to splitting past some bound) is small, but I ran out of
+time to write and test it this unit — it's a real gap, not a solved one.
 
 ## What I'd Do Differently
 
-<!-- Knowing what you know now — which of your five criteria would you write
-     differently, and why?
-
-     Milestone 5. -->
+- **Criterion 1** I'd split in two if I were starting over: one target for
+  single-document questions, one for multi-hop ones. Lumping them into a
+  single "4 of 5" hid the fact that the one miss isn't like the other four —
+  it's a different kind of question being asked to clear the same bar.
+- **Criterion 4** I'd stop writing as a target with a number at all, since
+  whole-document chunking makes it true by construction here. I'd replace it
+  with an actual code-level check (an assertion or a warning in
+  `chunker.py`) rather than an acceptance criterion that can't meaningfully
+  fail on this corpus.
+- **Criteria 3 and 5** I'd set at "5 of 5" from the start. I hedged to "4 of
+  5" on both without evidence that a miss was likely, and across 15 real
+  model calls and both the before and after runs, neither one ever came
+  close to missing.
