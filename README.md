@@ -171,6 +171,24 @@ each; I checked the two groups it reported (0.20–0.35 in-corpus vs.
 0.82–0.93 out-of-scope) and decided myself that the default 0.6 didn't need
 changing, since it already sits close to the middle of that gap.
 
+**3. (Unit 2)** With no `scorer.py` built, I had it read through all 15 real
+answers from `run_eval.py`'s output and judge each one against my five
+criteria by hand, rather than leaving the Run columns blank. For the one
+borderline case — the Aldridge/Morrow laundry comparison — it flagged that no
+single chunk contains the full comparative answer even though both needed
+documents retrieved at rank #1 and #2, and I agreed that counted as not
+meeting criterion 1's literal wording rather than quietly reading it more
+generously.
+
+**4. (Unit 2)** For the Milestone 4 fix, I asked it to find a real problem my
+five criteria weren't catching rather than inventing a change for its own
+sake. It queried `store.search` directly on all 5 real questions and found
+that the correct document(s) always ranked #1 or #2, meaning every question
+retrieved 2-3 irrelevant chunks for no benefit. I checked that claim against
+the actual retrieved-source lists in both run logs myself before accepting
+the diagnosis, then had it make the one-line `TOP_K` change and re-run the
+eval to confirm nothing regressed.
+
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
      claims earns nothing.
