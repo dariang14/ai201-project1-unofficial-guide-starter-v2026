@@ -198,63 +198,127 @@ changing, since it already sits close to the middle of that gap.
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 4/5 | 4/5 | 4/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 4. Chunking doesn't split a document that didn't need splitting | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 5. Cited source is the correct one | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
 
-<!-- Underneath, paste the REAL output for each criterion from one of your
-     runs — the actual text your system produced, not a description of it.
-     Name the file and function that produced it. -->
+Criteria 1, 3, and 4 don't vary between runs: retrieval and chunking are both
+deterministic, so the same questions pass or fail every time. Full data in
+`results/run_2026-10-05_0208_before.md`, produced by `run_eval.py::main`.
+
+Real output, criterion 1's one "miss" (run 1 of 3 — identical across all three,
+since retrieval doesn't change):
+
+```
+Between Aldridge Hall and Morrow House, which building's laundry machines
+take coins, and which one costs more per wash? — run 1
+
+Best distance: 0.2700 (passed the gate)
+Sources retrieved: housing_aldridge_hall_laundry.txt, housing_innisfree_hall_laundry.txt,
+housing_morrow_house.txt, housing_morrow_house_laundry.txt, housing_old_brewhouse_laundry.txt
+
+Morrow House laundry machines take coins (along with cards), and Aldridge Hall
+costs more per wash at $1.75 compared to Morrow House's $1.50.
+
+Sources: `housing_morrow_house_laundry.txt`, `housing_aldridge_hall_laundry.txt`,
+and `housing_morrow_house.txt`.
+```
+
+No single chunk here contains the whole comparison — `housing_morrow_house_laundry.txt`
+only talks about Morrow, `housing_aldridge_hall_laundry.txt` only talks about
+Aldridge. The answer is still fully correct, but by the literal wording of
+criterion 1 ("the retrieved chunks include **one** that contains the answer"),
+this doesn't count, which is why 4/5 and not 5/5.
+
+Real output, criterion 2/5, a clean pass:
+
+```
+How much does a wash cost at Aldridge Hall, and is it card only? — run 1
+
+Best distance: 0.3470 (passed the gate)
+Sources retrieved: housing_aldridge_hall.txt, housing_aldridge_hall_laundry.txt,
+housing_calder_annexe.txt, housing_calder_annexe_laundry.txt, housing_innisfree_hall_laundry.txt
+
+A wash costs $1.75 at Aldridge Hall, and it is card only.
+
+Source: `housing_aldridge_hall_laundry.txt` (and also mentioned in `housing_aldridge_hall.txt`).
+```
+
+Real output, criterion 3 (gate on out-of-corpus questions), from
+`run_eval.py::check_out_of_scope`: refused 5 of 5 — every out-of-scope
+distance (0.825–0.934) landed far outside the 0.6 cutoff.
+
+Real output, criterion 4, from `python app.py index`: `88 documents ... 88
+chunks ... produced by chunker.py::split_documents` — every document became
+exactly one chunk, nothing split.
 
 ## Verdicts
 
-<!-- MET or MISSED for each of the five, against the target you wrote last
-     unit — not a new one. Plus a sentence on how you decided. That sentence
-     matters most where it was close.
-
-     If your target said 4 of 5 and your runs came out 4, 3, 4, that's a MISS.
-     The target has to hold, not show up occasionally.
-
-     Milestone 2. -->
-
 | # | Criterion | Verdict | How I decided |
 |---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| 1 | Retrieved chunk contains the answer | MET | 4 of 5 held in every one of the 3 runs (retrieval doesn't vary run to run). The one exception is the Aldridge/Morrow laundry comparison — I checked with `store.search` directly and both needed documents ranked #1 and #2, so retrieval actually did its job; it's just that no *single* chunk holds a two-building comparison, which is the literal thing criterion 1 asks for. I'm counting that as not met rather than bending the wording. |
+| 2 | Every answer names a source | MET | 5 of 5 in all three runs, no exceptions across 15 real generations. Matches what I predicted in Project 1 — the system prompt requires naming a file and the gate never lets a sourceless answer through. |
+| 3 | Gate stops out-of-corpus questions | MET | 5 of 5, exceeding the 4/5 target. Distances for the five out-of-scope questions (0.825–0.934) never came close to the 0.6 cutoff. |
+| 4 | Chunking doesn't split a document that didn't need splitting | MET | 88 documents in, 88 chunks out — every document is its own chunk, so this holds at essentially 5/5 (really 88/88) by construction. |
+| 5 | Cited source is the correct one | MET | 5 of 5 in all three runs. Every citation, including both citations on the multi-hop questions, named a document that actually supports the answer — I read all 15 real answers to check this, not just whether *a* source was named. |
 
 ## Diagnoses
 
-<!-- For each miss: which stage caused it, and how. The stage alone isn't
-     enough — you need the mechanism.
+Nothing missed — all five criteria held across all three runs. Being honest
+about whether my targets were set low:
 
-     Not a diagnosis: "Question 3 didn't work."
-     A diagnosis:     "Question 3 asks about laundry costs. The answer is in
-                       one sentence that got split across two chunks, so
-                       neither chunk on its own contains it."
-
-     The five stages: loading → chunking → embedding → retrieval → generation.
-
-     Look for a pattern. If three misses all ask about numbers, that's one
-     problem, not three.
-
-     Missed nothing? Say so, then say honestly whether your targets were set
-     low, and which one you'd tighten and to what.
-
-     Milestone 3. -->
+- **Criterion 2** (5/5) was calibrated correctly, not loose: I predicted
+  exactly this outcome in Project 1 based on how `generate.py`'s system
+  prompt and the gate are wired together, and it held with zero exceptions
+  across 15 real model calls.
+- **Criteria 3 and 5** I set at "4 of 5," deliberately leaving room for one
+  miss I never actually saw (both landed 5/5 every run). In hindsight both
+  were a little conservative — I'd tighten both to "5 of 5" now that I've
+  seen the out-of-scope distance gap is wide (0.825–0.934 vs. a 0.6 cutoff)
+  and that nothing in 15 real generations ever cited a wrong document.
+- **Criterion 4** is the one I'd actually rewrite rather than tighten. Because
+  my chunker makes "one document = one chunk" a hard rule instead of a
+  measured outcome, this criterion is guaranteed to pass by construction on
+  this corpus — it isn't testing anything empirical anymore, just whether I
+  kept my own code honest. (This is also exactly what my Project 1 feedback
+  flagged: the chunker has no upper bound, so this guarantee would quietly
+  stop being true on a corpus with a document over 800 characters.)
+- **Criterion 1** is the one I'd leave alone. It's the only criterion where
+  the target number is actually doing work — it's the one case (the
+  multi-hop comparison) where needing two documents at once tests something
+  none of the single-document questions do.
 
 ## The Improvement
 
-**What I changed:**
+**What I changed:** Lowered `TOP_K` in `config.py` from 5 to 3.
 
-**Why I picked it:**
+**Why I picked it:** None of the five criteria caught this, but it's a real
+problem the Diagnoses section surfaced: when I checked `store.search`
+directly on all 5 real questions, the answer-bearing document(s) ranked #1
+or #2 in *every single case* — never lower. That means 2 to 3 of every 5
+retrieved chunks were pure noise on every question (e.g.
+`admin_printing_quota.txt` and `money_jobs.txt` showing up for a
+dining-dollars question that has nothing to do with either). That's wasted
+prompt tokens on every call, and a real risk on a harder question or a
+noisier corpus where irrelevant context actually confuses the model — just
+not one any of my five criteria measure, since they only check whether the
+*right* chunk is present, not whether *wrong* ones are absent.
 
-<!-- Connect it to a specific diagnosis above in one sentence. If you can't,
-     you picked a fix because it sounded impressive. -->
+### Run Log — After
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| 1. Retrieved chunk contains the answer | 4 of 5 | _pending_ | _pending_ | _pending_ | _pending_ |
+| 2. Every answer names a source | 5 of 5 | _pending_ | _pending_ | _pending_ | _pending_ |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | _pending_ | _pending_ | _pending_ | _pending_ |
+| 4. Chunking doesn't split a document that didn't need splitting | 4 of 5 | _pending_ | _pending_ | _pending_ | _pending_ |
+| 5. Cited source is the correct one | 4 of 5 | _pending_ | _pending_ | _pending_ | _pending_ |
+
+**Did it help?**
+
+_pending — re-run in progress._
 
 ### Run Log — After
 

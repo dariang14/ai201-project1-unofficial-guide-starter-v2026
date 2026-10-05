@@ -33,7 +33,13 @@ CHUNK_OVERLAP = 120     # characters shared between neighbouring chunks
 
 # ─── Retrieval (Milestone 4) ─────────────────────────────────────────────────
 
-TOP_K = 5               # how many chunks to pull back per question
+TOP_K = 3               # how many chunks to pull back per question
+# Unit 2: lowered from 5. Direct store.search() inspection on all 5 real
+# questions showed every answer-bearing document ranking 1st or 2nd; the
+# other 2-3 of 5 retrieved chunks were always irrelevant noise (e.g.
+# admin_printing_quota.txt showing up for a dining-dollars question). Cutting
+# noise this way costs nothing measured by the five criteria, since nothing
+# needed rank 3+, but it does cut prompt tokens on every call.
 
 # The relevance gate. If the best chunk is further away than this, the system
 # refuses to answer instead of handing the model thin material.
